@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo_list/bloc/bloc/status_bloc_bloc.dart';
-import 'package:todo_list/bloc/bloc/todo_list_bloc.dart';
+import 'package:provider/provider.dart';
+import 'package:todo_list/provider/status_provider.dart';
+import 'package:todo_list/provider/todo_list_provider.dart';
 import 'package:todo_list/screens/widgets/active.dart';
 import 'package:todo_list/screens/widgets/completd.dart';
 
@@ -17,49 +17,28 @@ class _HomeState extends State<Home> {
 
   @override
   void initState() {
-    BlocProvider.of<TodoListBloc>(context).add(TodoListEvent.getListActive);
+    Provider.of<TodoListProvider>(context, listen: false).getListActive();
+
     super.initState();
   }
 
   String screen = 'active';
   @override
   Widget build(BuildContext context) {
-    // statusBloc.add(StatusBlocEvent.status);
-
-    BlocProvider.of<TodoListBloc>(context).stream.listen((event) {
-      // print(event.action);
-    });
-
-    Timer.periodic(Duration(seconds: 3), (_) {
-      BlocProvider.of<StatusBloc>(context).add(StatusBlocEvent.status);
-    });
-    BlocProvider.of<StatusBloc>(context).stream.listen((event) {
-      //print('dsf');
-
-      if (this.status != event.status) {
-        this.status = event.status;
-        setState(() {});
-      }
+    this.status = context
+        .select<StatusProvider, String>((value) => this.status = value.status);
+    Timer.periodic(Duration(seconds: 2), (_) {
+      Provider.of<StatusProvider>(context, listen: false).getStatus();
     });
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor:
             (status.toUpperCase() == 'ONLINE') ? Colors.green : Colors.red,
-        title: BlocBuilder<StatusBloc, StatusBlocState>(
-          builder: (context, state) {
-            AppBar(
-              backgroundColor: (status.toUpperCase() == 'ONLINE')
-                  ? Colors.green
-                  : Colors.red,
-            );
-            return Container(
-              margin: EdgeInsets.only(left: 5),
-              child: Text(state.status),
-            );
-          },
+        title: Container(
+          margin: EdgeInsets.only(left: 5),
+          child: Text(this.status),
         ),
-        //leadingWidth: 30,
         leading: Container(
           margin: EdgeInsets.only(left: 10),
           child: Builder(builder: (context) {
@@ -83,22 +62,24 @@ class _HomeState extends State<Home> {
               ),
             ),
             ListTile(
-              title: Text('Active Tasks'),
+              title: Text(
+                'Active Tasks',
+              ),
               onTap: () {
-                screen = 'active';
-                BlocProvider.of<TodoListBloc>(context)
-                    .add(TodoListEvent.getListActive);
-                Navigator.pop(context);
+                this.screen = 'active';
+                Provider.of<TodoListProvider>(context, listen: false)
+                    .getListActive();
+                Navigator.of(context).pop();
                 setState(() {});
               },
             ),
             ListTile(
               title: Text('Completed Tasks'),
               onTap: () {
-                screen = 'completed';
-                BlocProvider.of<TodoListBloc>(context)
-                    .add(TodoListEvent.getListCompleted);
-                Navigator.pop(context);
+                this.screen = 'completed';
+                Provider.of<TodoListProvider>(context, listen: false)
+                    .getListCompleted();
+                Navigator.of(context).pop();
                 setState(() {});
               },
             )

@@ -1,11 +1,10 @@
 import 'package:http/http.dart' as http;
 
-class StatusProvider {
+class StatusApiService {
   Future<String> getStatus() async {
     try {
-      final data = await http.get(Uri.parse(
-          // 'http://t.i70clouds.com:5000/ping',
-          'https://rest.ensembl.org/info/ping?'));
+      final data =
+          await http.get(Uri.parse('https://t.i70clouds.com:5000/ping'));
       if (data.statusCode == 200) return 'Online';
       return 'offline';
     } catch (e) {

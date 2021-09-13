@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo_list/bloc/bloc/todo_list_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:todo_list/data/models/todo.dart';
+import 'package:todo_list/provider/todo_list_provider.dart';
 
 class CompletedScreen extends StatefulWidget {
   const CompletedScreen({Key? key}) : super(key: key);
@@ -19,7 +19,7 @@ class _CompletedScreenState extends State<CompletedScreen> {
   TextEditingController addList = TextEditingController();
   @override
   void initState() {
-    BlocProvider.of<TodoListBloc>(context).stream.listen((event) {
+    Provider.of<TodoListProvider>(context, listen: false).addListener(() {
       isCheckedList = [];
     });
     super.initState();
@@ -27,8 +27,8 @@ class _CompletedScreenState extends State<CompletedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<TodoListBloc, TodoListState>(builder: (context, state) {
-      todoList = state.list;
+    return Consumer<TodoListProvider>(builder: (context, provider, child) {
+      todoList = provider.state.list;
       len = todoList.length;
       return Container(
         margin: EdgeInsets.only(top: 10, bottom: 20),
@@ -56,8 +56,8 @@ class _CompletedScreenState extends State<CompletedScreen> {
                     child: Container(
                       // height: 50,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Checkbox(
                             checkColor: Colors.white,
@@ -87,18 +87,15 @@ class _CompletedScreenState extends State<CompletedScreen> {
                             },
                           ),
                           Wrap(
+                            alignment: WrapAlignment.start,
                             children: [
                               Container(
                                 margin: EdgeInsets.only(top: 10, bottom: 10),
                                 width: MediaQuery.of(context).size.width * .55,
                                 child: (isCheckedList[index]['edit'] == false)
                                     ? Text(
-                                        todoList[index]
-                                            .getMessage
-                                            .toString()
-                                            .toUpperCase(),
+                                        todoList[index].getMessage.toString(),
                                         style: TextStyle(
-                                          fontWeight: FontWeight.bold,
                                           fontSize: 18,
                                         ),
                                       )
@@ -126,11 +123,30 @@ class _CompletedScreenState extends State<CompletedScreen> {
             ),
             Align(
               alignment: Alignment.bottomRight,
-              child: (checkedMode)
+              child: (!editMode)
                   ? Container(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          Container(
+                            width: 150,
+                            child: ElevatedButton(
+                                style: ButtonStyle(
+                                  shape: MaterialStateProperty.all<
+                                      RoundedRectangleBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18.0),
+                                    ),
+                                  ),
+                                  backgroundColor:
+                                      MaterialStateColor.resolveWith(
+                                          (states) => Colors.blue),
+                                ),
+                                onPressed: () {
+                                  _showMyDialog();
+                                },
+                                child: Text('Add')),
+                          ),
                           (checkedMode)
                               ? Container(
                                   margin: EdgeInsets.symmetric(horizontal: 10),
@@ -157,12 +173,13 @@ class _CompletedScreenState extends State<CompletedScreen> {
                                           i--;
                                         }
                                       }
-                                      BlocProvider.of<TodoListBloc>(context)
+                                      Provider.of<TodoListProvider>(context,
+                                              listen: false)
                                           .state
                                           .list = todoList;
-                                      BlocProvider.of<TodoListBloc>(context)
-                                          .add(TodoListEvent
-                                              .removeListCompleted);
+                                      Provider.of<TodoListProvider>(context,
+                                              listen: false)
+                                          .removeListCompleted();
                                       checkedMode = false;
                                       setState(() {});
                                     },
@@ -179,6 +196,62 @@ class _CompletedScreenState extends State<CompletedScreen> {
         ),
       );
     });
+  }
+
+  Future<void> _showMyDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add New List'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                TextField(
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Enter todo list'),
+                  controller: addList,
+                )
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Add'),
+              onPressed: () {
+                todoList.add(new Todo(message: addList.text, status: 'active'));
+                Map<String, dynamic> temp = {
+                  'checkBox': false,
+                  'edit': false,
+                  'text': addList,
+                  'prevText': addList.text
+                };
+                isCheckedList.add(temp);
+                Provider.of<TodoListProvider>(context, listen: false)
+                    .state
+                    .list = todoList;
+                Provider.of<TodoListProvider>(context, listen: false)
+                    .setListActiveFromComplete();
+                addList.text = '';
+                setState(() {});
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Color getColor(Set<MaterialState> states) {

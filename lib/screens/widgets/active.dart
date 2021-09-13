@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo_list/bloc/bloc/todo_list_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:todo_list/data/models/todo.dart';
+import 'package:todo_list/provider/todo_list_provider.dart';
 
 class ActiveScreen extends StatefulWidget {
   const ActiveScreen({Key? key}) : super(key: key);
@@ -19,7 +19,7 @@ class _ActiveScreenState extends State<ActiveScreen> {
   TextEditingController addList = TextEditingController();
   @override
   void initState() {
-    BlocProvider.of<TodoListBloc>(context).stream.listen((event) {
+    Provider.of<TodoListProvider>(context, listen: false).addListener(() {
       isCheckedList = [];
     });
     super.initState();
@@ -27,8 +27,8 @@ class _ActiveScreenState extends State<ActiveScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<TodoListBloc, TodoListState>(builder: (context, state) {
-      todoList = state.list;
+    return Consumer<TodoListProvider>(builder: (context, provider, child) {
+      todoList = provider.state.list;
       len = todoList.length;
       return Container(
         margin: EdgeInsets.only(top: 10, bottom: 20),
@@ -57,62 +57,70 @@ class _ActiveScreenState extends State<ActiveScreen> {
                       // height: 50,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Checkbox(
-                            checkColor: Colors.white,
-                            fillColor:
-                                MaterialStateProperty.resolveWith(getColor),
-                            value: isCheckedList[index]['checkBox'],
-                            onChanged: (value) {
-                              isCheckedList[index]['checkBox'] = value ?? false;
-                              editMode = false;
-                              var i = 0;
-                              if (isCheckedList
-                                      .where((element) =>
-                                          element['checkBox'] == true)
-                                      .length >
-                                  0)
-                                checkedMode = true;
-                              else
-                                checkedMode = false;
-                              isCheckedList.forEach((element) {
-                                isCheckedList[i]['edit'] = false;
-
-                                isCheckedList[i]['text'].text =
-                                    isCheckedList[i]['prevText'];
-                                i++;
-                              });
-                              setState(() {});
-                            },
-                          ),
-                          Wrap(
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Container(
-                                margin: EdgeInsets.only(top: 5, bottom: 10),
-                                width: MediaQuery.of(context).size.width * .54,
-                                child: (isCheckedList[index]['edit'] == false)
-                                    ? Text(
-                                        todoList[index]
-                                            .getMessage
-                                            .toString()
-                                            .toUpperCase(),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                      )
-                                    : TextField(
-                                        controller: isCheckedList[index]
-                                            ['text'],
-                                        keyboardType: TextInputType.multiline,
-                                        maxLines: null,
-                                        textInputAction:
-                                            TextInputAction.newline,
-                                        decoration: InputDecoration(
-                                            border: OutlineInputBorder(),
-                                            hintText: 'Enter todo list'),
-                                      ),
+                              Checkbox(
+                                checkColor: Colors.white,
+                                fillColor:
+                                    MaterialStateProperty.resolveWith(getColor),
+                                value: isCheckedList[index]['checkBox'],
+                                onChanged: (value) {
+                                  isCheckedList[index]['checkBox'] =
+                                      value ?? false;
+                                  editMode = false;
+                                  var i = 0;
+                                  if (isCheckedList
+                                          .where((element) =>
+                                              element['checkBox'] == true)
+                                          .length >
+                                      0)
+                                    checkedMode = true;
+                                  else
+                                    checkedMode = false;
+                                  isCheckedList.forEach((element) {
+                                    isCheckedList[i]['edit'] = false;
+
+                                    isCheckedList[i]['text'].text =
+                                        isCheckedList[i]['prevText'];
+                                    i++;
+                                  });
+                                  setState(() {});
+                                },
+                              ),
+                              Wrap(
+                                children: [
+                                  Container(
+                                    margin: EdgeInsets.only(top: 5, bottom: 10),
+                                    width:
+                                        MediaQuery.of(context).size.width * .54,
+                                    child: (isCheckedList[index]['edit'] ==
+                                            false)
+                                        ? Text(
+                                            todoList[index]
+                                                .getMessage
+                                                .toString(),
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                            ),
+                                          )
+                                        : TextField(
+                                            controller: isCheckedList[index]
+                                                ['text'],
+                                            keyboardType:
+                                                TextInputType.multiline,
+                                            maxLines: null,
+                                            textInputAction:
+                                                TextInputAction.newline,
+                                            decoration: InputDecoration(
+                                                border: OutlineInputBorder(),
+                                                hintText: 'Enter todo list'),
+                                          ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -200,11 +208,13 @@ class _ActiveScreenState extends State<ActiveScreen> {
                                     if (isCheckedList[i]['checkBox'] == true)
                                       todoList[i].setStatus('completed');
                                   }
-                                  BlocProvider.of<TodoListBloc>(context)
+                                  Provider.of<TodoListProvider>(context,
+                                          listen: false)
                                       .state
                                       .list = todoList;
-                                  BlocProvider.of<TodoListBloc>(context)
-                                      .add(TodoListEvent.setMarkedAsCompleted);
+                                  Provider.of<TodoListProvider>(context,
+                                          listen: false)
+                                      .setmarkedAsCompleted();
                                   checkedMode = false;
                                 } else {
                                   _showMyDialog();
@@ -241,11 +251,13 @@ class _ActiveScreenState extends State<ActiveScreen> {
                                           i--;
                                         }
                                       }
-                                      BlocProvider.of<TodoListBloc>(context)
+                                      Provider.of<TodoListProvider>(context,
+                                              listen: false)
                                           .state
                                           .list = todoList;
-                                      BlocProvider.of<TodoListBloc>(context)
-                                          .add(TodoListEvent.removeListActive);
+                                      Provider.of<TodoListProvider>(context,
+                                              listen: false)
+                                          .removeListActive();
                                       checkedMode = false;
                                       setState(() {});
                                     },
@@ -304,9 +316,11 @@ class _ActiveScreenState extends State<ActiveScreen> {
                   'prevText': addList.text
                 };
                 isCheckedList.add(temp);
-                BlocProvider.of<TodoListBloc>(context).state.list = todoList;
-                BlocProvider.of<TodoListBloc>(context)
-                    .add(TodoListEvent.setListActive);
+                Provider.of<TodoListProvider>(context, listen: false)
+                    .state
+                    .list = todoList;
+                Provider.of<TodoListProvider>(context, listen: false)
+                    .setListActive();
                 addList.text = '';
                 setState(() {});
                 Navigator.of(context).pop();

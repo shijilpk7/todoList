@@ -9,7 +9,7 @@ class TodoRepository {
       String? data = this.prefs.getString('todoList');
       return data ?? '';
     } on Exception catch (e) {
-      return '';
+      return e.toString();
     }
   }
 
@@ -18,7 +18,7 @@ class TodoRepository {
       this.prefs = await SharedPreferences.getInstance();
       this.prefs.setString('todoList', data);
       return data;
-    } on Exception catch (e) {
+    } on Exception catch (_) {
       return 'failed';
     }
   }

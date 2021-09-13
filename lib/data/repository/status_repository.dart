@@ -1,13 +1,19 @@
-import 'package:todo_list/data/provider/status_provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:todo_list/data/apiServices/status_api_service.dart';
 
 class StatusRepository {
-  final StatusProvider _statusProvider;
+  final StatusApiService _statusApiService;
 
-  StatusRepository({StatusProvider? statusProvider})
-      : _statusProvider = statusProvider ?? StatusProvider();
+  StatusRepository({StatusApiService? statusApiService})
+      : _statusApiService = statusApiService ?? StatusApiService();
 
   Future<String> getStatus() async {
-    final data = await _statusProvider.getStatus();
-    return data.toString();
+    try {
+      final data = await _statusApiService.getStatus();
+      return data.toString();
+    } catch (e) {
+      debugPrint(e.toString());
+      return 'offline';
+    }
   }
 }
